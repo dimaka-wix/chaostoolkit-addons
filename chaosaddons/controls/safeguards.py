@@ -88,6 +88,8 @@ are not arbitrarely interrupted.
 see: https://github.com/chaostoolkit/chaostoolkit/issues/210
 
 """
+import os
+import signal
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
 from functools import partial
@@ -102,7 +104,7 @@ from chaoslib.activity import run_activity
 from chaoslib.caching import lookup_activity
 from chaoslib.control import controls
 from chaoslib.exceptions import ActivityFailed, InterruptExecution
-from chaoslib.exit import exit_gracefully
+from chaoslib.exit import exit_gracefully, exit_ungracefully
 from chaoslib.hypothesis import within_tolerance
 from chaoslib.types import Activity, Configuration, \
     Experiment, Probe, Run, Secrets, Settings
@@ -223,9 +225,9 @@ class Guardian(threading.local):
         Stop the guardian and all its safeguards.
         """
         self.repeating_until.set()
-        self.now.shutdown(wait=True)
-        self.repeating.shutdown(wait=True)
-        self.once.shutdown(wait=True)
+        self.now.shutdown(wait=False)
+        self.repeating.shutdown(wait=False)
+        self.once.shutdown(wait=False)
 
     def should_exit_before_activity(self) -> bool:
         return self._interrupt_after_activity and state.interrupted
@@ -240,7 +242,7 @@ def configure_control(configuration: Configuration = None,
                       experiment: Experiment = None,
                       probes: List[Probe] = None,
                       interrupt_after_activity: Optional[bool] = None) \
-                          -> None:
+        -> None:
     guardian.prepare(probes, interrupt_after_activity)
 
 
@@ -251,7 +253,7 @@ def before_experiment_control(context: str,
                               experiment: Experiment = None,
                               probes: List[Probe] = None,
                               interrupt_after_activity: Optional[bool] = None) \
-                                  -> None:
+        -> None:
     guardian.run(
         experiment, probes, interrupt_after_activity, configuration,
         secrets, settings)
@@ -288,10 +290,12 @@ def run_repeatedly(experiment: Experiment, probe: Probe,
         run = execute_activity(
             experiment=experiment, probe=probe,
             configuration=configuration, secrets=secrets)
+        # interrupt_experiment_on_unhealthy_probe(
+        #     probe, run, configuration, secrets)
+        # if not stop_repeating.is_set():
+        interrupt_experiment_on_unhealthy_probe(
+            probe, interrupt_after_activity, run, configuration, secrets)
         stop_repeating.wait(timeout=wait_for)
-        if not stop_repeating.is_set():
-            interrupt_experiment_on_unhealthy_probe(
-                probe, interrupt_after_activity, run, configuration, secrets)
 
 
 def run_soon(experiment: Experiment, probe: Probe,
@@ -345,6 +349,7 @@ def interrupt_experiment_on_unhealthy_probe(
                     "Safeguard '{}' triggered the end of the "
                     "experiment. But we will exit only after the current "
                     "activity is completed".format(probe["name"]))
+                os.kill(os.getpid(), signal.SIGKILL)
 
 
 def execute_activity(experiment: Experiment, probe: Probe,
