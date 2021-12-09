@@ -225,9 +225,9 @@ class Guardian(threading.local):
         Stop the guardian and all its safeguards.
         """
         self.repeating_until.set()
-        self.now.shutdown(wait=False)
-        self.repeating.shutdown(wait=False)
-        self.once.shutdown(wait=False)
+        self.now.shutdown(wait=True)
+        self.repeating.shutdown(wait=True)
+        self.once.shutdown(wait=True)
 
     def should_exit_before_activity(self) -> bool:
         return self._interrupt_after_activity and state.interrupted
@@ -290,9 +290,6 @@ def run_repeatedly(experiment: Experiment, probe: Probe,
         run = execute_activity(
             experiment=experiment, probe=probe,
             configuration=configuration, secrets=secrets)
-        # interrupt_experiment_on_unhealthy_probe(
-        #     probe, run, configuration, secrets)
-        # if not stop_repeating.is_set():
         interrupt_experiment_on_unhealthy_probe(
             probe, interrupt_after_activity, run, configuration, secrets)
         stop_repeating.wait(timeout=wait_for)
