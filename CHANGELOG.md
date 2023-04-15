@@ -2,18 +2,23 @@
 
 ## [Unreleased][]
 
-[Unreleased]: https://github.com/chaostoolkit/chaostoolkit-addons/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/chaostoolkit/chaostoolkit-addons/compare/0.3.0...HEAD
+
+## [0.3.0][]
+
+[0.3.0]: https://github.com/chaostoolkit/chaostoolkit-addons/compare/0.2.0...0.3.0
 
 ### Added
 
 - Validate probes in the safeguard control [#7][7], using the new
   `validate_control` capability of the chaostoolkit core
+- Export control functions in module variable `__all__`
 
 [7]: https://github.com/chaostoolkit/chaostoolkit-addons/issues/7
 
 ### Changed
 
-- Requires Python 3.6+ to match Chaos Toolkit itself
+- Requires Python 3.7+ to match Chaos Toolkit itself
 
 ## [0.2.0][]
 

@@ -102,6 +102,10 @@ from chaoslib.types import Configuration, Control, \
 from .synchronization import experiment_finished
 
 
+__all__ = ["configure_control", "before_experiment_control",
+           "after_experiment_control", "validate_control"]
+
+
 class Guardian(threading.local):
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -207,7 +211,7 @@ guardian = Guardian()
 
 
 def validate_control(control: Control) -> None:
-    probes = control["provider"]["arguments"]
+    probes = control["provider"].get("arguments", {}).get("probes")
     validate_probes(probes)
 
 
